@@ -7,7 +7,7 @@ import os
 import json
 import psutil
 
-# Only import gdown when needed
+# Import gdown only when needed
 try:
     import gdown
 except ImportError:
@@ -26,26 +26,42 @@ def sanitize_feature_name(name):
         return "unknown_feature"
     return name
 
-MODEL_PATH = "random_forest_new.joblib"   # <-- Name for your new model
+def get_ram(label=""):
+    ram = psutil.virtual_memory().used / (1024*1024)
+    print(f"RAM {label}: {ram:.2f} MB", flush=True)
+    return ram
+
+MODEL_PATH = "random_forest_new.joblib"
 DIET_PATH = "diseases_diets.csv"
 MED_PATH = "diseases_medications.csv"
 SYMPTOM_FEATURES_PATH = "symptom_features.json"
 
 def download_model():
     if not os.path.exists(MODEL_PATH):
-        print("Downloading model file from Google Drive...")
-        # Use your new Google Drive file ID here:
+        print("Downloading model file from Google Drive...", flush=True)
         url = "https://drive.google.com/uc?id=1HbiT4SN1hFkLEGolizmmd5bQqPOTM1wa"
         gdown.download(url, MODEL_PATH, quiet=False)
-        print("Model downloaded successfully.")
+        print("Model downloaded successfully.", flush=True)
+    else:
+        print("Model file already exists, skipping download.", flush=True)
 
+# ---- STARTUP LOGS ----
+get_ram("before model download")
 download_model()
+get_ram("before model load")
 
-print(f"RAM before loading: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} MB")
-model = joblib.load(MODEL_PATH)
-print(f"RAM after loading: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} MB")
+try:
+    print("Loading model...", flush=True)
+    model = joblib.load(MODEL_PATH)
+    print("Model loaded successfully.", flush=True)
+except Exception as e:
+    print(f"ERROR during model load: {e}", flush=True)
+    raise
 
-# Load LabelEncoder classes
+get_ram("after model load")
+
+# ---- LABEL ENCODER ----
+print("Loading disease classes...", flush=True)
 disease_classes = []
 if os.path.exists(MED_PATH):
     df_med = pd.read_csv(MED_PATH)
@@ -55,7 +71,9 @@ else:
 
 le = LabelEncoder()
 le.fit(disease_classes)
+print(f"Loaded {len(disease_classes)} disease classes.", flush=True)
 
+# ---- DIET & MED ----
 def load_map(path, value_col):
     if not os.path.exists(path):
         return {}
@@ -68,13 +86,16 @@ def load_map(path, value_col):
 diet_map = load_map(DIET_PATH, "Diets")
 med_map = load_map(MED_PATH, "Medication")
 
+# ---- SYMPTOM FEATURES ----
 if os.path.exists(SYMPTOM_FEATURES_PATH):
     with open(SYMPTOM_FEATURES_PATH, "r") as f:
         feature_names = json.load(f)
     all_feature_names_sanitized = [sanitize_feature_name(s) for s in feature_names]
+    print(f"Loaded {len(all_feature_names_sanitized)} symptom features.", flush=True)
 else:
     raise Exception("symptom_features.json with your true feature names is missing!")
 
+# ---- PREDICTION LOGIC ----
 def predict(symptoms):
     x = pd.DataFrame(np.zeros((1, len(all_feature_names_sanitized))), columns=all_feature_names_sanitized)
     recognized = False
@@ -112,6 +133,7 @@ def predict(symptoms):
         "medications": medications
     }
 
+# ---- FLASK ----
 app = Flask(__name__)
 
 @app.route("/recommend", methods=["POST"])
@@ -120,7 +142,9 @@ def predict_api():
     if not data or "symptoms" not in data:
         return jsonify({"error": "Please send a JSON with a 'symptoms' field (list of symptoms)"}), 400
     symptoms = data["symptoms"]
+    print(f"Received symptoms: {symptoms}", flush=True)
     result = predict(symptoms)
+    print(f"Prediction result: {result}", flush=True)
     return jsonify(result)
 
 @app.route("/", methods=["GET"])
