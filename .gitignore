@@ -14,6 +14,7 @@ __pycache__/
 
 # Large model files (if you decide not to use LFS for them)
 random_forest_best_model.joblib
+random_forest_new.joblib
 # Or more generally if you have other large models:
 # *.joblib
 

@@ -25,22 +25,21 @@ def sanitize_feature_name(name):
         return "unknown_feature"
     return name
 
-MODEL_PATH = "random_forest_best_model.joblib"
+MODEL_PATH = "random_forest_new.joblib"   # <-- Name for your new model
 DIET_PATH = "diseases_diets.csv"
 MED_PATH = "diseases_medications.csv"
 SYMPTOM_FEATURES_PATH = "symptom_features.json"
 
-# ---- DOWNLOAD MODEL IF NEEDED ----
 def download_model():
     if not os.path.exists(MODEL_PATH):
         print("Downloading model file from Google Drive...")
-        url = "https://drive.google.com/uc?id=1ZjZX5Bw56NsgKfNc3tXrmr39qjnpzMej"
+        # Use your new Google Drive file ID here:
+        url = "https://drive.google.com/uc?id=1HbiT4SN1hFkLEGolizmmd5bQqPOTM1wa"
         gdown.download(url, MODEL_PATH, quiet=False)
         print("Model downloaded successfully.")
 
 download_model()
 
-# ---- CONTINUE WITH NORMAL LOADING ----
 model = joblib.load(MODEL_PATH)
 
 # Load LabelEncoder classes
