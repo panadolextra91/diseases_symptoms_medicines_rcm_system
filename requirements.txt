@@ -5,3 +5,4 @@ pandas
 numpy
 gdown
 psutil
+gunicorn

@@ -152,4 +152,5 @@ def root():
     return "API is up. POST to /recommend with {'symptoms': [list of symptoms]}"
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
