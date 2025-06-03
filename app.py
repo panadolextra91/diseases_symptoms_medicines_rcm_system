@@ -5,6 +5,7 @@ import numpy as np
 import re
 import os
 import json
+import psutil
 
 # Only import gdown when needed
 try:
@@ -40,7 +41,9 @@ def download_model():
 
 download_model()
 
+print(f"RAM before loading: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} MB")
 model = joblib.load(MODEL_PATH)
+print(f"RAM after loading: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2:.2f} MB")
 
 # Load LabelEncoder classes
 disease_classes = []
