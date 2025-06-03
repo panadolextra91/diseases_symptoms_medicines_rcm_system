@@ -1,0 +1,29 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+conda/
+miniconda/
+myenv/ # Or whatever you name your local conda env folders if created inside project
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Large model files (if you decide not to use LFS for them)
+random_forest_best_model.joblib
+# Or more generally if you have other large models:
+# *.joblib
+
+# Large dataset files (if you decide not to use LFS and store them elsewhere)
+# Final_Augmented_dataset_Diseases_and_Symptoms.csv
+
+# IDE and OS specific files
+.vscode/
+.idea/
+.DS_Store
+*.ipynb_checkpoints
+
+# Add any other output files or logs here
