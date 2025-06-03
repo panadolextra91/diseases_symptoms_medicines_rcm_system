@@ -5,9 +5,16 @@ import numpy as np
 import re
 import os
 import json
+
+# Only import gdown when needed
+try:
+    import gdown
+except ImportError:
+    os.system('pip install gdown')
+    import gdown
+
 from sklearn.preprocessing import LabelEncoder
 
-# --- Sanitize function (same as in your training code) ---
 def sanitize_feature_name(name):
     name = str(name)
     name = re.sub(r'[\[\]{}:",.<>\s]', '_', name)
@@ -18,16 +25,25 @@ def sanitize_feature_name(name):
         return "unknown_feature"
     return name
 
-# --- Load resources at startup ---
 MODEL_PATH = "random_forest_best_model.joblib"
 DIET_PATH = "diseases_diets.csv"
 MED_PATH = "diseases_medications.csv"
 SYMPTOM_FEATURES_PATH = "symptom_features.json"
 
-# 1. Load model
+# ---- DOWNLOAD MODEL IF NEEDED ----
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print("Downloading model file from Google Drive...")
+        url = "https://drive.google.com/uc?id=1ZjZX5Bw56NsgKfNc3tXrmr39qjnpzMej"
+        gdown.download(url, MODEL_PATH, quiet=False)
+        print("Model downloaded successfully.")
+
+download_model()
+
+# ---- CONTINUE WITH NORMAL LOADING ----
 model = joblib.load(MODEL_PATH)
 
-# 2. Load LabelEncoder classes
+# Load LabelEncoder classes
 disease_classes = []
 if os.path.exists(MED_PATH):
     df_med = pd.read_csv(MED_PATH)
@@ -38,7 +54,6 @@ else:
 le = LabelEncoder()
 le.fit(disease_classes)
 
-# 3. Load diet & medication data
 def load_map(path, value_col):
     if not os.path.exists(path):
         return {}
@@ -51,7 +66,6 @@ def load_map(path, value_col):
 diet_map = load_map(DIET_PATH, "Diets")
 med_map = load_map(MED_PATH, "Medication")
 
-# 4. Load true feature names from symptom_features.json
 if os.path.exists(SYMPTOM_FEATURES_PATH):
     with open(SYMPTOM_FEATURES_PATH, "r") as f:
         feature_names = json.load(f)
@@ -59,9 +73,7 @@ if os.path.exists(SYMPTOM_FEATURES_PATH):
 else:
     raise Exception("symptom_features.json with your true feature names is missing!")
 
-# --- Prediction logic ---
 def predict(symptoms):
-    # Build input feature vector
     x = pd.DataFrame(np.zeros((1, len(all_feature_names_sanitized))), columns=all_feature_names_sanitized)
     recognized = False
     for orig in symptoms:
@@ -98,7 +110,6 @@ def predict(symptoms):
         "medications": medications
     }
 
-# --- Flask app ---
 app = Flask(__name__)
 
 @app.route("/recommend", methods=["POST"])
